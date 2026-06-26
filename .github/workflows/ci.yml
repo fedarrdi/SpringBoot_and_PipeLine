@@ -41,14 +41,11 @@ jobs:
       - name: Check jar file exists
         run: ls -lh target/*.jar
 
-      - name: Run jar file
-        run: |
-          java -jar target/*.jar &
-          sleep 15
-          curl --fail http://localhost:8080/health-check
-
       - name: Build Docker image
         run: docker build -t healthapi:${{ github.sha }} .
+
+      - name: Remove old container if it exists
+        run: docker rm -f healthapi-container || true
 
       - name: Run Docker container
         run: docker run -d --name healthapi-container -p 8081:8080 healthapi:${{ github.sha }}
@@ -56,15 +53,28 @@ jobs:
       - name: Test Docker container endpoint
         run: |
           for attempt in {1..10}; do
+            echo "Attempt $attempt: checking /health-check"
+
             if curl --fail --silent --show-error http://localhost:8081/health-check; then
               echo
+              echo "Docker container health check passed"
               exit 0
             fi
 
             sleep 3
           done
 
+          echo "Docker container health check failed"
           exit 1
+
+      - name: Save Docker image as tar
+        run: docker save healthapi:${{ github.sha }} -o healthapi-image.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthapi-docker-image
+          path: healthapi/healthapi-image.tar
 
       - name: Show Docker logs if needed
         if: failure()
