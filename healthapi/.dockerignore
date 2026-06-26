@@ -1,0 +1,11 @@
+.git
+.github
+.mvn
+src
+HELP.md
+*.md
+.DS_Store
+*.log
+
+target/*
+!target/*.jar

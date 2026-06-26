@@ -47,3 +47,21 @@ jobs:
           sleep 15
           curl --fail http://localhost:8080/health-check
 
+      - name: Build Docker image
+        run: docker build -t healthapi:${{ github.sha }} .
+
+      - name: Run Docker container
+        run: docker run -d --name healthapi-container -p 8080:8080 healthapi:${{ github.sha }}
+
+      - name: Test Docker container endpoint
+        run: |
+          curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:8080/health-check
+
+      - name: Show Docker logs if needed
+        if: failure()
+        run: docker logs healthapi-container || true
+
+      - name: Stop Docker container
+        if: always()
+        run: docker rm -f healthapi-container || true
+
