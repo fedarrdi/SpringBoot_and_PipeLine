@@ -37,3 +37,13 @@ jobs:
 
       - name: Build application
         run: ./mvnw package -DskipTests
+
+      - name: Check jar file exists
+        run: ls -lh target/*.jar
+
+      - name: Run jar file
+        run: |
+          java -jar target/*.jar &
+          sleep 15
+          curl --fail http://localhost:8080/health-check
+
