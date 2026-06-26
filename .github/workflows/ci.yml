@@ -55,7 +55,16 @@ jobs:
 
       - name: Test Docker container endpoint
         run: |
-          curl --fail --retry 10 --retry-delay 3 --retry-connrefused http://localhost:8081/health-check
+          for attempt in {1..10}; do
+            if curl --fail --silent --show-error http://localhost:8081/health-check; then
+              echo
+              exit 0
+            fi
+
+            sleep 3
+          done
+
+          exit 1
 
       - name: Show Docker logs if needed
         if: failure()
@@ -64,4 +73,3 @@ jobs:
       - name: Stop Docker container
         if: always()
         run: docker rm -f healthapi-container || true
-
